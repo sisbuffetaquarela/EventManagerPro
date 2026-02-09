@@ -12,7 +12,6 @@ export const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { loginDemo } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,11 +22,6 @@ export const Login: React.FC = () => {
     } catch (err) {
       setError('Falha no login. Verifique suas credenciais.');
     }
-  };
-
-  const handleDemo = () => {
-    loginDemo();
-    navigate('/');
   };
 
   return (
@@ -56,20 +50,6 @@ export const Login: React.FC = () => {
             {error && <p className="text-sm text-red-500 text-center">{error}</p>}
             <Button type="submit" className="w-full">Entrar</Button>
           </form>
-
-          <div className="mt-6 pt-6 border-t border-slate-200">
-            <div className="text-center mb-3">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Ou experimente agora</span>
-            </div>
-            <Button 
-              type="button" 
-              variant="secondary" 
-              className="w-full" 
-              onClick={handleDemo}
-            >
-              Acessar Versão Demo
-            </Button>
-          </div>
         </CardContent>
       </Card>
     </div>

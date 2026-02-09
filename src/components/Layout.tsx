@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LayoutDashboard, Wallet, Calendar, FileText, LogOut, Settings, BookOpen } from 'lucide-react';
+import logoImg from '../src/components/logo.png';
 
 export const Layout: React.FC = () => {
   const { logout, user } = useAuth();
@@ -18,10 +19,16 @@ export const Layout: React.FC = () => {
     <div className="flex h-screen bg-slate-50">
       {/* Sidebar */}
       <aside className="w-64 bg-slate-900 text-slate-100 flex flex-col">
-        <div className="p-6">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
-            Event Manager
-          </h1>
+        <div className="p-6 flex flex-col items-center"> 
+          {/* 2. SUBSTITUIÇÃO: Removido o h1 e colocado a img 
+             Usei 'w-40' para controlar a largura e 'mb-2' para dar espaço
+          */}
+          <img 
+            src={logoImg} 
+            alt="Buffet Espaço Aquarela" 
+            className="w-48 h-auto object-contain mb-2" 
+          />
+          
           <p className="text-xs text-slate-400 mt-1">Olá, {user?.email}</p>
         </div>
 
