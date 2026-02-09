@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LayoutDashboard, Wallet, Calendar, FileText, LogOut, Settings, BookOpen } from 'lucide-react';
-import logoImg from '../src/components/logo.png';
+import logoImg from './logo.png';
 
 export const Layout: React.FC = () => {
   const { logout, user } = useAuth();
