@@ -57,13 +57,18 @@ export const deleteCost = async (id: string) => {
 export const getDefaultItems = async (): Promise<DefaultItem[]> => {
   // FIX: Using v8 `get` method on a collection.
   const snapshot = await db.collection(COLLECTIONS.DEFAULT_ITEMS).get();
-  return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as DefaultItem));
+  const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as DefaultItem));
+  // Sort by createdAt to ensure insertion order (oldest first)
+  return items.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 };
 
 export const addDefaultItem = async (item: DefaultItem) => {
   const { id, ...data } = item;
   // FIX: Using v8 `add` method.
-  await db.collection(COLLECTIONS.DEFAULT_ITEMS).add(data);
+  await db.collection(COLLECTIONS.DEFAULT_ITEMS).add({
+    ...data,
+    createdAt: Date.now()
+  });
 };
 
 export const deleteDefaultItem = async (id: string) => {

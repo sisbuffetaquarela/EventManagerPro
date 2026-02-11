@@ -32,6 +32,7 @@ export interface DefaultItem {
   id?: string;
   name: string;
   unitCost: number;
+  createdAt?: number;
 }
 
 export interface Budget {
