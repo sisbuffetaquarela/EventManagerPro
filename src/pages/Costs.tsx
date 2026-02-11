@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { 
   getCosts, addCost, deleteCost,
   getSettings, saveSettings,
@@ -8,8 +8,11 @@ import { Cost, SystemSettings, DefaultItem } from '../types';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Trash2, ChevronDown } from 'lucide-react';
+import { Trash2, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
+
+type SortKey = 'name' | 'unitCost' | null;
+type SortDirection = 'asc' | 'desc';
 
 const DefaultItemsSection: React.FC<{
   items: DefaultItem[];
@@ -17,6 +20,10 @@ const DefaultItemsSection: React.FC<{
   onDelete: (id: string) => void;
 }> = ({ items, onAdd, onDelete }) => {
   const [newItem, setNewItem] = useState({ name: '', unitCost: '' });
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ 
+    key: null, 
+    direction: 'asc' 
+  });
 
   const handleAdd = () => {
     if (!newItem.name || !newItem.unitCost) return;
@@ -25,6 +32,43 @@ const DefaultItemsSection: React.FC<{
       unitCost: Number(newItem.unitCost)
     });
     setNewItem({ name: '', unitCost: '' });
+  };
+
+  const handleSort = (key: 'name' | 'unitCost') => {
+    setSortConfig(current => {
+      if (current.key === key) {
+        // Se já está ordenado por essa coluna, inverte a direção
+        return { key, direction: current.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      // Se é uma nova coluna, ordena ascendente por padrão
+      return { key, direction: 'asc' };
+    });
+  };
+
+  const sortedItems = useMemo(() => {
+    const sortableItems = [...items];
+    if (sortConfig.key !== null) {
+      sortableItems.sort((a, b) => {
+        const valA = a[sortConfig.key!];
+        const valB = b[sortConfig.key!];
+
+        if (valA < valB) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (valA > valB) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [items, sortConfig]);
+
+  const getSortIcon = (columnKey: 'name' | 'unitCost') => {
+    if (sortConfig.key !== columnKey) {
+      return <ArrowUpDown size={14} className="text-slate-300" />;
+    }
+    return sortConfig.direction === 'asc' ? <ArrowUp size={14} className="text-indigo-600" /> : <ArrowDown size={14} className="text-indigo-600" />;
   };
   
   return (
@@ -40,13 +84,29 @@ const DefaultItemsSection: React.FC<{
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Item</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Custo Unitário</th>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase cursor-pointer hover:bg-slate-100 transition-colors select-none"
+                  onClick={() => handleSort('name')}
+                >
+                  <div className="flex items-center gap-2">
+                    Item
+                    {getSortIcon('name')}
+                  </div>
+                </th>
+                <th 
+                  className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase cursor-pointer hover:bg-slate-100 transition-colors select-none"
+                  onClick={() => handleSort('unitCost')}
+                >
+                   <div className="flex items-center gap-2">
+                    Custo Unitário
+                    {getSortIcon('unitCost')}
+                  </div>
+                </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {items.length > 0 ? items.map(item => (
+              {sortedItems.length > 0 ? sortedItems.map(item => (
                 <tr key={item.id}>
                   <td className="px-6 py-3 text-sm text-slate-900">{item.name}</td>
                   <td className="px-6 py-3 text-sm text-slate-900">{formatCurrency(item.unitCost)}</td>
