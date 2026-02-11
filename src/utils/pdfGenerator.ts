@@ -4,13 +4,17 @@ import { Budget } from '../types';
 import { formatCurrency, formatDate } from './format';
 import logoUrl from '../components/logo.png';
 
-// Helper para carregar a imagem da logo
-const loadImage = (url: string): Promise<HTMLImageElement> => {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.src = url;
-    img.onload = () => resolve(img);
-    img.onerror = (err) => reject(err);
+// 1. Helper robusto para converter imagem em Base64 (Corrige o erro da logo)
+const getBase64FromUrl = async (url: string): Promise<string> => {
+  const data = await fetch(url);
+  const blob = await data.blob();
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = () => {
+      const base64data = reader.result;
+      resolve(base64data as string);
+    };
   });
 };
 
@@ -18,8 +22,8 @@ export const generateBudgetPDF = async (budget: Budget) => {
   const doc = new jsPDF();
 
   // Configuração de Cores
-  const colorPrimary = [79, 70, 229]; // Indigo (Barra lateral)
-  const colorMenu = [15, 23, 42];     // Slate 900 (Fundo da Logo - Cor do Menu)
+  const colorPrimary = [79, 70, 229]; // Indigo
+  const colorMenu = [15, 23, 42];     // Slate 900
   const colorDark = [40, 40, 40];     
   const colorLight = [100, 100, 100]; 
 
@@ -40,36 +44,29 @@ export const generateBudgetPDF = async (budget: Budget) => {
 
   // --- LOGO E FUNDO (Superior Direito) ---
   try {
-    // Desenha o fundo da cor do menu (Slate 900) no canto superior direito
-    // Posição X: 150 (largura A4 é 210, então ocupa os 60mm finais)
     const bgX = 150;
     const bgY = 0;
     const bgWidth = 60;
     const bgHeight = 40;
 
+    // Fundo escuro
     doc.setFillColor(colorMenu[0], colorMenu[1], colorMenu[2]);
     doc.rect(bgX, bgY, bgWidth, bgHeight, 'F');
 
-    // Carrega e desenha a logo
-    const img = await loadImage(logoUrl);
+    // Carrega a imagem como Base64
+    const base64Img = await getBase64FromUrl(logoUrl);
     
-    // Calcula dimensões para manter proporção, limitando a largura a 40mm
-    const maxLogoWidth = 40;
-    const maxLogoHeight = 25;
-    let logoWidth = img.width;
-    let logoHeight = img.height;
-    
-    const ratio = Math.min(maxLogoWidth / logoWidth, maxLogoHeight / logoHeight);
-    logoWidth = logoWidth * ratio;
-    logoHeight = logoHeight * ratio;
+    // Define dimensões fixas ou proporcionais para a logo
+    const logoWidth = 35; // Largura fixa desejada
+    const logoHeight = 20; // Altura fixa desejada (ajuste conforme a proporção real da sua imagem)
 
-    // Centraliza a logo dentro do box escuro
+    // Centraliza matematicamente
     const logoX = bgX + (bgWidth - logoWidth) / 2;
     const logoY = bgY + (bgHeight - logoHeight) / 2;
 
-    doc.addImage(img, 'PNG', logoX, logoY, logoWidth, logoHeight);
+    doc.addImage(base64Img, 'PNG', logoX, logoY, logoWidth, logoHeight);
   } catch (error) {
-    console.warn('Não foi possível carregar a logo para o PDF', error);
+    console.warn('Erro ao carregar logo:', error);
   }
 
   // --- DADOS DO EVENTO ---
@@ -97,9 +94,8 @@ export const generateBudgetPDF = async (budget: Budget) => {
   drawInfoRow('Data do Evento:', formatDate(budget.eventDate));
   drawInfoRow('Convidados:', `${budget.guestCount || 0} pessoas`);
 
-  // --- TABELA DE ITENS ---
+  // --- TABELA DE ITENS (Sem Rodapé Aqui) ---
   const tableStartY = currentY + 10;
-
   const tableBody = budget.items.map(item => [
     item.name,
     item.quantity
@@ -126,29 +122,47 @@ export const generateBudgetPDF = async (budget: Budget) => {
       0: { halign: 'left' },
       1: { halign: 'center', cellWidth: 40 } 
     },
-    
-    // Configuração do Rodapé (Total)
-    showFoot: 'lastPage', // IMPORTANTE: Exibe o rodapé apenas na última página
-    foot: [['TOTAL GERAL', formatCurrency(budget.totalSales)]],
-    footStyles: {
-      fillColor: [245, 245, 245],
-      textColor: colorDark,
-      fontStyle: 'bold',
-      halign: 'right', 
-      fontSize: 12
+    margin: { left: 20, right: 14 }
+  });
+
+  // --- TABELA DE TOTAL (Separada para garantir apenas no final) ---
+  // Pegamos a posição Y onde a tabela anterior terminou
+  const finalYAfterTable = (doc as any).lastAutoTable.finalY;
+
+  autoTable(doc, {
+    startY: finalYAfterTable + 2, // Um pequeno espaço após a tabela de itens
+    body: [
+        ['TOTAL GERAL', formatCurrency(budget.totalSales)]
+    ],
+    // Removemos o cabeçalho desta tabela
+    showHead: 'never',
+    theme: 'plain', // Sem grades, para parecer um rodapé
+    styles: {
+        font: 'helvetica',
+        fontStyle: 'bold',
+        fontSize: 12,
+        textColor: colorDark,
+        halign: 'right', // Alinha tudo à direita
+        cellPadding: 4,
+        fillColor: [245, 245, 245] // Fundo cinza suave
+    },
+    columnStyles: {
+        0: { cellWidth: 'auto' }, // Ocupa o espaço necessário
+        1: { cellWidth: 40 }      // Mesma largura da coluna de QTD/Valor anterior
     },
     margin: { left: 20, right: 14 }
   });
 
-  // --- RODAPÉ FINAL DO DOCUMENTO ---
-  const finalY = (doc as any).lastAutoTable.finalY || 150;
+  // --- RODAPÉ DE TEXTO ---
+  // Atualizamos o finalY baseando-se na tabela de totais agora
+  const finalPageY = (doc as any).lastAutoTable.finalY + 15;
 
   doc.setFontSize(9);
   doc.setTextColor(colorLight[0], colorLight[1], colorLight[2]);
   doc.setFont('helvetica', 'normal');
   
-  doc.text('Validade da proposta: 15 dias.', 20, finalY + 15);
-  doc.text('Agradecemos a preferência!', 20, finalY + 20);
+  doc.text('Validade da proposta: 15 dias.', 20, finalPageY);
+  doc.text('Agradecemos a preferência!', 20, finalPageY + 5);
 
   doc.save(`Orcamento_${budget.clientName.replace(/\s/g, '_')}_${budget.eventDate}.pdf`);
 };
