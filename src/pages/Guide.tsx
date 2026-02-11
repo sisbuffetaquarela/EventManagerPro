@@ -7,19 +7,34 @@ export const Guide: React.FC = () => {
     <div className="space-y-8 pb-10">
       <div className="space-y-2">
         <h2 className="text-3xl font-bold text-slate-900">Manual do Sistema</h2>
-        <p className="text-slate-500 text-lg">Entenda como utilizar todas as funcionalidades do EventManager Pro.</p>
+        <p className="text-slate-500 text-lg">Guia completo para utilização do EventManager Pro.</p>
       </div>
 
       <Card>
-        <CardHeader title="Visão Geral" icon={<LayoutDashboard />} />
+        <CardHeader title="Fluxo de Trabalho Ideal" icon={<LayoutDashboard />} />
         <CardContent>
-          <p className="mb-4 text-slate-700 leading-relaxed">
-            O <strong>EventManager Pro</strong> foi desenvolvido para ajudar empresas de eventos a precificar corretamente seus serviços, 
-            garantindo que todos os custos (fixos e variáveis) sejam cobertos e que a margem de lucro seja real.
+          <p className="mb-6 text-slate-700 leading-relaxed">
+            O <strong>EventManager Pro</strong> foi projetado para garantir a saúde financeira da sua empresa de eventos.
+            Para obter os melhores resultados, recomendamos seguir esta ordem de operação:
           </p>
-          <p className="text-slate-700">
-            O fluxo de trabalho ideal segue a ordem: <span className="font-semibold bg-slate-100 px-2 py-1 rounded">Custos & Config ➔ Orçamentos ➔ Relatórios</span>.
-          </p>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+            <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg text-center">
+              <div className="font-bold text-indigo-600 mb-1">1. Configuração</div>
+              <div className="text-slate-600">Defina dias úteis, taxa de ocupação e cadastre seus itens padrão.</div>
+            </div>
+            <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg text-center">
+              <div className="font-bold text-indigo-600 mb-1">2. Custos Mensais</div>
+              <div className="text-slate-600">Lance seus custos fixos (aluguel, equipe fixa) para o cálculo de rateio.</div>
+            </div>
+            <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg text-center">
+              <div className="font-bold text-indigo-600 mb-1">3. Orçamentos</div>
+              <div className="text-slate-600">Crie propostas calculando a margem de lucro exata desejada.</div>
+            </div>
+            <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg text-center">
+              <div className="font-bold text-indigo-600 mb-1">4. Relatórios</div>
+              <div className="text-slate-600">Acompanhe o DRE e o resultado real após a execução dos eventos.</div>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -29,79 +44,81 @@ export const Guide: React.FC = () => {
           <CardHeader title="1. Custos & Configurações" icon={<Settings />} />
           <CardContent className="space-y-4 text-sm text-slate-700">
             <p>
-              Esta é a área mais importante para a precisão dos cálculos. Antes de fazer orçamentos, você deve alimentar esta tela.
+              Esta tela é o coração da inteligência financeira do sistema.
             </p>
             <ul className="list-disc pl-5 space-y-2">
               <li>
-                <strong>Parâmetros Gerais:</strong> Defina quantos dias úteis sua empresa opera e qual a taxa de ocupação esperada (ex: se você tem capacidade para 10 festas, mas costuma fechar 7, sua ocupação é 70%). Isso afeta o cálculo do rateio de custo fixo.
+                <strong>Parâmetros Gerais:</strong> A "Taxa de Ocupação" e "Dias Úteis" definem quantos eventos você espera fazer. O sistema usa isso para dividir seus custos fixos. Se você paga R$ 5.000 de aluguel e espera 10 eventos, cada evento "custa" R$ 500 de aluguel.
               </li>
               <li>
-                <strong>Custos Fixos Mensais:</strong> Cadastre aluguel, internet, salários, etc. Os custos são agrupados por período (ex: "Fevereiro de 2026") e podem ser expandidos ou recolhidos para facilitar a visualização.
-                <br/>
-                <span className="text-indigo-600 font-medium">Importante:</span> Você pode cadastrar custos "Recorrentes" (sem data) que se aplicam a todos os meses, ou custos específicos para um Mês/Ano.
+                <strong>Itens Padrão:</strong> Cadastre aqui produtos e serviços que você vende sempre (ex: "Cadeira Tiffany", "Buffet Churrasco p/ pessoa"). Isso permite preencher orçamentos com um clique.
+              </li>
+              <li>
+                <strong>Custos Fixos e Variáveis da Empresa:</strong> Cadastre todas as despesas da estrutura do negócio. Você pode usar a data "Recorrente" para custos que se repetem todo mês (ex: Internet).
               </li>
             </ul>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-blue-500">
-          <CardHeader title="2. Orçamentos" icon={<Calendar />} />
+          <CardHeader title="2. Criando Orçamentos" icon={<Calendar />} />
           <CardContent className="space-y-4 text-sm text-slate-700">
-            <p>
-              Aqui você cria as propostas para os clientes. O sistema usa um método de "Custo +" para precificar.
-            </p>
             <ul className="list-disc pl-5 space-y-2">
               <li>
-                <strong>Criação:</strong> Preencha os dados do cliente e do evento. Em seguida, adicione cada custo do evento (buffet, decoração, etc.) manualmente, informando o nome, a quantidade e o custo unitário. Você pode duplicar linhas para agilizar.
+                <strong>Dados do Evento:</strong> Preencha data e local. A data é importante para o sistema saber qual tabela de custos mensais utilizar no cálculo.
               </li>
               <li>
-                <strong>Cálculo do Custo Total:</strong> O sistema soma todos os itens que você cadastrou e adiciona uma parcela dos seus custos fixos (o "rateio"). O resultado é o <strong>Custo Total do Evento</strong>.
+                <strong>Carregar Padrão:</strong> Use este botão na lista de itens para importar os Itens Padrão cadastrados anteriormente. Depois, apenas ajuste as quantidades.
               </li>
               <li>
-                <strong>Definição do Preço:</strong> No resumo financeiro, você informa a <strong>Margem de Lucro Líquido</strong> que deseja ter. Com base nisso, o sistema calcula o <strong>Valor de Venda</strong> final a ser cobrado do cliente.
+                <strong>Resumo Financeiro:</strong> O sistema mostra o "Custo Total do Evento" (soma dos itens + rateio de custo fixo).
               </li>
               <li>
-                <strong>PDF:</strong> Gere um PDF profissional com um clique para enviar ao cliente.
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Card className="border-l-4 border-l-green-500">
-          <CardHeader title="3. Relatórios Financeiros" icon={<FileText />} />
-          <CardContent className="space-y-4 text-sm text-slate-700">
-            <p>
-              Analise o resultado real da empresa após a realização dos eventos.
-            </p>
-            <ul className="list-disc pl-5 space-y-2">
-              <li>
-                Selecione o Mês e Ano para ver o DRE (Demonstrativo do Resultado do Exercício).
-              </li>
-              <li>
-                O relatório considera apenas orçamentos com status <strong>"Realizado"</strong>.
-              </li>
-              <li>
-                <strong>Margem de Contribuição:</strong> Quanto sobra da receita após pagar os custos variáveis (comida, decoração, etc).
-              </li>
-              <li>
-                <strong>Resultado Líquido:</strong> O lucro real que foi para o bolso, após pagar custos variáveis e todos os custos fixos da empresa.
+                <strong>Status:</strong> Mantenha atualizado. Apenas eventos "Realizados" contam como receita nos relatórios. "Agendados" contam como previsão.
               </li>
             </ul>
           </CardContent>
         </Card>
 
         <Card className="border-l-4 border-l-amber-500">
-          <CardHeader title="Dicas Importantes" icon={<Calculator />} />
+          <CardHeader title="3. Como o Preço é Calculado" icon={<Calculator />} />
           <CardContent className="space-y-4 text-sm text-slate-700">
+            <p>
+              O sistema utiliza o conceito de <strong>Margem sobre a Receita</strong> (e não Markup simples).
+            </p>
+            <div className="bg-slate-100 p-3 rounded-md font-mono text-xs">
+              Preço Venda = Custo Total / (1 - (Margem% / 100))
+            </div>
+            <p>
+              <strong>Exemplo Prático:</strong><br/>
+              Se o evento custa R$ 8.000 e você quer 20% de lucro líquido:<br/>
+              O sistema cobrará <strong>R$ 10.000</strong>.<br/>
+              (R$ 10.000 - R$ 8.000 de custo = R$ 2.000 de lucro, que é exatamente 20% de R$ 10.000).
+            </p>
+            <p className="text-xs text-slate-500">
+              Isso garante que, ao final do mês, a porcentagem que sobra no bolso seja realmente a que você planejou.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-green-500">
+          <CardHeader title="4. Relatórios e DRE" icon={<FileText />} />
+          <CardContent className="space-y-4 text-sm text-slate-700">
+            <p>
+              Acesse a tela de Relatórios para ver o resultado consolidado do mês.
+            </p>
             <ul className="list-disc pl-5 space-y-2">
               <li>
-                Mantenha os status dos orçamentos atualizados. Orçamentos "Declinados" não entram na soma de receita.
+                <strong>Receita Bruta:</strong> Soma dos orçamentos "Realizados" no mês.
               </li>
               <li>
-                Se o <strong>Lucro Líquido</strong> no orçamento estiver negativo, significa que a margem de lucro que você definiu não é suficiente para cobrir os custos. Aumente a margem ou reduza os custos.
+                <strong>Custos Variáveis:</strong> Soma dos itens gastos nos eventos.
               </li>
               <li>
-                Revise a <strong>% de Ocupação</strong> periodicamente. Se você está trabalhando mais do que o previsto, aumente a porcentagem para que o custo fixo rateado por evento diminua.
+                <strong>Lucro Bruto:</strong> Quanto sobrou dos eventos para pagar a estrutura da empresa.
+              </li>
+              <li>
+                <strong>Resultado Líquido:</strong> O lucro real (Lucro Bruto - Custos Fixos Reais do mês).
               </li>
             </ul>
           </CardContent>
