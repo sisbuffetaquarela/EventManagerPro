@@ -4,7 +4,7 @@ import { Budget } from '../types';
 import { formatCurrency, formatDate } from './format';
 import logoUrl from '../components/logo.png';
 
-// 1. Helper robusto para converter imagem em Base64 (Corrige o erro da logo)
+// Mantemos o Helper de Base64 que funcionou bem
 const getBase64FromUrl = async (url: string): Promise<string> => {
   const data = await fetch(url);
   const blob = await data.blob();
@@ -21,81 +21,95 @@ const getBase64FromUrl = async (url: string): Promise<string> => {
 export const generateBudgetPDF = async (budget: Budget) => {
   const doc = new jsPDF();
 
-  // Configuração de Cores
-  const colorPrimary = [79, 70, 229]; // Indigo
-  const colorMenu = [15, 23, 42];     // Slate 900
-  const colorDark = [40, 40, 40];     
-  const colorLight = [100, 100, 100]; 
+  // --- PALETA DE CORES MODERNA ---
+  // Slate 900 (Fundo do Header/Menu)
+  const colorHeaderBg = [15, 23, 42]; 
+  // Indigo 600 (Destaques e Cabeçalho da Tabela)
+  const colorAccent = [79, 70, 229]; 
+  // Cinza Escuro (Textos Principais)
+  const colorTextDark = [51, 65, 85]; 
+  // Cinza Médio (Textos Secundários/Labels)
+  const colorTextLight = [100, 116, 139]; 
+  // Branco
+  const colorWhite = [255, 255, 255];
 
-  // --- BARRA LATERAL ESQUERDA ---
-  doc.setFillColor(colorPrimary[0], colorPrimary[1], colorPrimary[2]);
-  doc.rect(0, 0, 8, 297, 'F'); 
+  // --- CABEÇALHO (BANNER SUPERIOR) ---
+  // Retângulo cobrindo toda a largura superior (0 a 210mm)
+  doc.setFillColor(colorHeaderBg[0], colorHeaderBg[1], colorHeaderBg[2]);
+  doc.rect(0, 0, 210, 40, 'F');
 
-  // --- TÍTULO ---
-  doc.setFontSize(24);
-  doc.setTextColor(colorDark[0], colorDark[1], colorDark[2]);
+  // Título (Branco sobre fundo escuro)
+  doc.setFontSize(22);
+  doc.setTextColor(colorWhite[0], colorWhite[1], colorWhite[2]);
   doc.setFont('helvetica', 'bold');
-  doc.text('ORÇAMENTO DE EVENTO', 20, 25);
+  doc.text('ORÇAMENTO', 14, 20); // Margem esquerda padrão é 14mm no jspdf
 
+  // Subtítulo / Data (Cinza claro ou Branco com transparência visual)
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(colorLight[0], colorLight[1], colorLight[2]);
-  doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 20, 32);
+  doc.setTextColor(203, 213, 225); // Slate 300
+  doc.text(`Emitido em: ${new Date().toLocaleDateString('pt-BR')}`, 14, 28);
 
-  // --- LOGO E FUNDO (Superior Direito) ---
+  // --- LOGO (Alinhada à Direita dentro do Banner) ---
   try {
-    const bgX = 150;
-    const bgY = 0;
-    const bgWidth = 60;
-    const bgHeight = 40;
-
-    // Fundo escuro
-    doc.setFillColor(colorMenu[0], colorMenu[1], colorMenu[2]);
-    doc.rect(bgX, bgY, bgWidth, bgHeight, 'F');
-
-    // Carrega a imagem como Base64
     const base64Img = await getBase64FromUrl(logoUrl);
     
-    // Define dimensões fixas ou proporcionais para a logo
-    const logoWidth = 35; // Largura fixa desejada
-    const logoHeight = 20; // Altura fixa desejada (ajuste conforme a proporção real da sua imagem)
+    // Dimensões máximas para a logo
+    const maxW = 45;
+    const maxH = 25;
+    
+    // Pegamos as dimensões originais da imagem (hack para jsPDF pegar ratio)
+    const imgProps = doc.getImageProperties(base64Img);
+    const ratio = imgProps.width / imgProps.height;
+    
+    let renderW = maxW;
+    let renderH = maxW / ratio;
 
-    // Centraliza matematicamente
-    const logoX = bgX + (bgWidth - logoWidth) / 2;
-    const logoY = bgY + (bgHeight - logoHeight) / 2;
+    if (renderH > maxH) {
+      renderH = maxH;
+      renderW = maxH * ratio;
+    }
 
-    doc.addImage(base64Img, 'PNG', logoX, logoY, logoWidth, logoHeight);
+    // Posição: 210 (largura A4) - 14 (margem) - largura da logo
+    const logoX = 210 - 14 - renderW;
+    const logoY = (40 - renderH) / 2; // Centraliza verticalmente no banner de 40 de altura
+
+    doc.addImage(base64Img, 'PNG', logoX, logoY, renderW, renderH);
   } catch (error) {
-    console.warn('Erro ao carregar logo:', error);
+    console.warn('Logo não carregada:', error);
   }
 
-  // --- DADOS DO EVENTO ---
-  let currentY = 55;
-  const labelX = 20;
-  const valueX = 60; 
-  const lineHeight = 8;
-
-  const drawInfoRow = (label: string, value: string | number) => {
+  // --- DADOS DO CLIENTE (Layout em Grid Clean) ---
+  let startY = 55;
+  
+  // Função auxiliar para desenhar campos com Label (cinza) e Valor (escuro)
+  const drawField = (label: string, value: string, x: number, y: number) => {
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
+    doc.setTextColor(colorTextLight[0], colorTextLight[1], colorTextLight[2]);
+    doc.text(label.toUpperCase(), x, y);
+
     doc.setFontSize(11);
-    doc.setTextColor(colorDark[0], colorDark[1], colorDark[2]);
-    doc.text(label, labelX, currentY);
-
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(60, 60, 60);
-    doc.text(String(value), valueX, currentY);
-
-    currentY += lineHeight;
+    doc.setTextColor(colorTextDark[0], colorTextDark[1], colorTextDark[2]);
+    doc.text(String(value), x, y + 6);
   };
 
-  drawInfoRow('Cliente:', budget.clientName);
-  drawInfoRow('Festa:', budget.eventName);
-  drawInfoRow('Telefone:', budget.clientPhone);
-  drawInfoRow('Data do Evento:', formatDate(budget.eventDate));
-  drawInfoRow('Convidados:', `${budget.guestCount || 0} pessoas`);
+  // Coluna 1
+  drawField('Cliente', budget.clientName, 14, startY);
+  drawField('Telefone', budget.clientPhone, 14, startY + 14);
 
-  // --- TABELA DE ITENS (Sem Rodapé Aqui) ---
-  const tableStartY = currentY + 10;
+  // Coluna 2 (Deslocada 80mm para direita)
+  drawField('Evento', budget.eventName, 100, startY);
+  drawField('Data Prevista', formatDate(budget.eventDate), 100, startY + 14);
+
+  // Coluna 3 (Canto direito)
+  drawField('Convidados', `${budget.guestCount || 0} Pessoas`, 160, startY);
+
+
+  // --- TABELA DE ITENS (Modernizada) ---
+  const tableStartY = startY + 25;
+
   const tableBody = budget.items.map(item => [
     item.name,
     item.quantity
@@ -103,66 +117,78 @@ export const generateBudgetPDF = async (budget: Budget) => {
 
   autoTable(doc, {
     startY: tableStartY,
-    head: [['DESCRIÇÃO DO ITEM', 'QTD']],
+    head: [['DESCRIÇÃO DO SERVIÇO / PRODUTO', 'QTD']],
     body: tableBody,
-    theme: 'grid',
+    theme: 'striped', // Visual listrado é mais moderno que 'grid'
     styles: {
       fontSize: 10,
       font: 'helvetica',
-      cellPadding: 4,
-      textColor: [50, 50, 50]
+      cellPadding: 6, // Mais espaçamento interno (respiro)
+      textColor: colorTextDark,
+      lineColor: [241, 245, 249], // Bordas muito sutis
+      lineWidth: 0.1,
     },
     headStyles: {
-      fillColor: colorPrimary,
-      textColor: [255, 255, 255],
+      fillColor: colorAccent, // Indigo no cabeçalho da tabela
+      textColor: colorWhite,
       fontStyle: 'bold',
-      halign: 'left'
+      halign: 'left',
+      cellPadding: 8 // Cabeçalho um pouco maior
     },
     columnStyles: {
       0: { halign: 'left' },
-      1: { halign: 'center', cellWidth: 40 } 
+      1: { halign: 'center', cellWidth: 30 } 
     },
-    margin: { left: 20, right: 14 }
+    alternateRowStyles: {
+      fillColor: [248, 250, 252] // Cinza muito claro (Slate 50) nas linhas pares
+    },
+    margin: { left: 14, right: 14 }
   });
 
-  // --- TABELA DE TOTAL (Separada para garantir apenas no final) ---
-  // Pegamos a posição Y onde a tabela anterior terminou
+  // --- TABELA DE TOTAIS (Minimalista) ---
   const finalYAfterTable = (doc as any).lastAutoTable.finalY;
 
+  // Linha separadora sutil antes do total
+  doc.setDrawColor(colorAccent[0], colorAccent[1], colorAccent[2]);
+  doc.setLineWidth(0.5);
+  doc.line(14, finalYAfterTable + 2, 196, finalYAfterTable + 2);
+
   autoTable(doc, {
-    startY: finalYAfterTable + 2, // Um pequeno espaço após a tabela de itens
+    startY: finalYAfterTable + 4,
     body: [
-        ['TOTAL GERAL', formatCurrency(budget.totalSales)]
+        ['VALOR TOTAL', formatCurrency(budget.totalSales)]
     ],
-    // Removemos o cabeçalho desta tabela
     showHead: 'never',
-    theme: 'plain', // Sem grades, para parecer um rodapé
+    theme: 'plain',
     styles: {
         font: 'helvetica',
         fontStyle: 'bold',
-        fontSize: 12,
-        textColor: colorDark,
-        halign: 'right', // Alinha tudo à direita
-        cellPadding: 4,
-        fillColor: [245, 245, 245] // Fundo cinza suave
+        fontSize: 14, // Fonte maior para o total
+        textColor: colorAccent, // Total na cor de destaque (Indigo)
+        halign: 'right',
+        cellPadding: 6
     },
     columnStyles: {
-        0: { cellWidth: 'auto' }, // Ocupa o espaço necessário
-        1: { cellWidth: 40 }      // Mesma largura da coluna de QTD/Valor anterior
+        0: { cellWidth: 'auto' }, 
+        1: { cellWidth: 50 } 
     },
-    margin: { left: 20, right: 14 }
+    margin: { left: 14, right: 14 }
   });
 
-  // --- RODAPÉ DE TEXTO ---
-  // Atualizamos o finalY baseando-se na tabela de totais agora
-  const finalPageY = (doc as any).lastAutoTable.finalY + 15;
-
-  doc.setFontSize(9);
-  doc.setTextColor(colorLight[0], colorLight[1], colorLight[2]);
-  doc.setFont('helvetica', 'normal');
+  // --- RODAPÉ ---
+  const pageHeight = doc.internal.pageSize.height;
   
-  doc.text('Validade da proposta: 15 dias.', 20, finalPageY);
-  doc.text('Agradecemos a preferência!', 20, finalPageY + 5);
+  doc.setFontSize(8);
+  doc.setTextColor(colorTextLight[0], colorTextLight[1], colorTextLight[2]);
+  doc.text('Proposta válida por 15 dias.', 14, pageHeight - 15);
+  doc.text('Este documento não vale como recibo de pagamento.', 14, pageHeight - 11);
+  
+  // Numeração de páginas (Opcional, mas profissional)
+  const pageCount = (doc as any).internal.getNumberOfPages();
+  for(let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.text(`Página ${i} de ${pageCount}`, 196, pageHeight - 11, { align: 'right' });
+  }
 
   doc.save(`Orcamento_${budget.clientName.replace(/\s/g, '_')}_${budget.eventDate}.pdf`);
 };
