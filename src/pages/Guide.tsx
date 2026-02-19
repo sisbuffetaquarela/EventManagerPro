@@ -6,7 +6,7 @@ export const Guide: React.FC = () => {
   return (
     <div className="space-y-8 pb-10">
       <div className="space-y-2">
-        <h2 className="text-3xl font-bold text-slate-900">Manual do Sistema</h2>
+        <h2 className="text-3xl font-bold text-slate-900">Manual do Sistema.</h2>
         <p className="text-slate-500 text-lg">Guia completo para utilização do EventManager Pro.</p>
       </div>
 
