@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { 
-  getSettings, getCosts, saveBudget, getBudgetById, getDefaultItems 
+  getSettings, getCosts, saveBudget, getBudgetById, getBudgetCategories 
 } from '../services/firestore';
-import { Budget, BudgetItem, BudgetStatus, Cost, DefaultItem } from '../types';
+import { Budget, BudgetItem, BudgetStatus, Cost, BudgetCategory } from '../types';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -35,7 +35,8 @@ export const BudgetForm: React.FC = () => {
   
   const [allCosts, setAllCosts] = useState<Cost[]>([]);
   const [settings, setSettings] = useState({ occupancyRate: 70, workingDaysPerMonth: 22 });
-  const [defaultItems, setDefaultItems] = useState<DefaultItem[]>([]);
+  const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   
   const [showCalcMemory, setShowCalcMemory] = useState(false);
   const [financials, setFinancials] = useState({
@@ -49,10 +50,10 @@ export const BudgetForm: React.FC = () => {
 
   useEffect(() => {
     const init = async () => {
-      const [all, sysSettings, dfltItems] = await Promise.all([getCosts(), getSettings(), getDefaultItems()]);
+      const [all, sysSettings, cats] = await Promise.all([getCosts(), getSettings(), getBudgetCategories()]);
       setAllCosts(all);
       setSettings(sysSettings);
-      setDefaultItems(dfltItems);
+      setBudgetCategories(cats);
 
       if (id) {
         const existing = await getBudgetById(id);
@@ -110,18 +111,21 @@ export const BudgetForm: React.FC = () => {
   };
   const removeItem = (index: number) => setItems(items.filter((_, i) => i !== index));
 
-  const handleLoadDefaultItems = () => {
-    if (defaultItems.length === 0) {
-      alert("Nenhum item padrão cadastrado. Vá para 'Custos & Config' para adicioná-los.");
+  const handleLoadCategoryItems = () => {
+    if (!selectedCategory) {
+      alert("Selecione um grupo de itens para carregar.");
       return;
     }
-    const newItemsFromDefaults = defaultItems.map(item => ({
+    const category = budgetCategories.find(c => c.id === selectedCategory);
+    if (!category) return;
+    
+    const newItemsFromCategory = category.items.map(item => ({
       id: crypto.randomUUID(),
       name: item.name,
       unitCost: item.unitCost,
       quantity: 1,
     }));
-    setItems(prev => [...prev, ...newItemsFromDefaults]);
+    setItems(prev => [...prev, ...newItemsFromCategory]);
   };
 
   const handleSave = async () => {
@@ -176,8 +180,16 @@ export const BudgetForm: React.FC = () => {
             <CardHeader 
               title="Itens de Custo do Evento" 
               action={
-                <div className="flex gap-2">
-                  <Button size="sm" variant="secondary" onClick={handleLoadDefaultItems}><ListPlus size={16} className="mr-2"/>Carregar Padrão</Button>
+                <div className="flex gap-2 items-center">
+                  <select 
+                    value={selectedCategory} 
+                    onChange={e => setSelectedCategory(e.target.value)}
+                    className="h-9 text-sm rounded-md border px-2 bg-slate-50"
+                  >
+                    <option value="">Selecione um Grupo</option>
+                    {budgetCategories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
+                  </select>
+                  <Button size="sm" variant="secondary" onClick={handleLoadCategoryItems}><ListPlus size={16} className="mr-2"/>Carregar Grupo</Button>
                   <Button size="sm" onClick={addItem}><Plus size={16} className="mr-2"/>Adicionar Item</Button>
                 </div>
               } 

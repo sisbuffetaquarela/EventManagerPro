@@ -1,12 +1,12 @@
 import { db } from "../firebase";
-import { Cost, SystemSettings, Budget, DefaultItem } from "../types";
+import { Cost, SystemSettings, Budget, BudgetCategory } from "../types";
 
 // Collections
 const COLLECTIONS = {
   COSTS: 'costs',
   SETTINGS: 'settings',
   BUDGETS: 'budgets',
-  DEFAULT_ITEMS: 'default_items'
+  BUDGET_CATEGORIES: 'budgetCategories'
 };
 
 // --- Settings ---
@@ -53,28 +53,31 @@ export const deleteCost = async (id: string) => {
   await db.collection(COLLECTIONS.COSTS).doc(id).delete();
 };
 
-// --- Default Items (Itens Padrão) ---
-export const getDefaultItems = async (): Promise<DefaultItem[]> => {
-  // FIX: Using v8 `get` method on a collection.
-  const snapshot = await db.collection(COLLECTIONS.DEFAULT_ITEMS).get();
-  const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as DefaultItem));
-  // Sort by createdAt to ensure insertion order (oldest first)
-  return items.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+// --- Budget Categories (Grupos de Orçamento) ---
+export const getBudgetCategories = async (): Promise<BudgetCategory[]> => {
+  const snapshot = await db.collection(COLLECTIONS.BUDGET_CATEGORIES).get();
+  const categories = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as BudgetCategory));
+  return categories.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
 };
 
-export const addDefaultItem = async (item: DefaultItem) => {
-  const { id, ...data } = item;
-  // FIX: Using v8 `add` method.
-  await db.collection(COLLECTIONS.DEFAULT_ITEMS).add({
-    ...data,
-    createdAt: Date.now()
-  });
+export const saveBudgetCategory = async (category: BudgetCategory) => {
+  const collectionRef = db.collection(COLLECTIONS.BUDGET_CATEGORIES);
+  if (category.id) {
+    const { id, ...data } = category;
+    await collectionRef.doc(id).update(data);
+  } else {
+    const { id, ...data } = category;
+    await collectionRef.add({
+      ...data,
+      createdAt: Date.now()
+    });
+  }
 };
 
-export const deleteDefaultItem = async (id: string) => {
-  // FIX: Using v8 `doc` and `delete` methods.
-  await db.collection(COLLECTIONS.DEFAULT_ITEMS).doc(id).delete();
+export const deleteBudgetCategory = async (id: string) => {
+  await db.collection(COLLECTIONS.BUDGET_CATEGORIES).doc(id).delete();
 };
+
 
 // --- Budgets ---
 export const getBudgets = async (): Promise<Budget[]> => {

@@ -1,126 +1,121 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   getCosts, addCost, deleteCost,
   getSettings, saveSettings,
-  getDefaultItems, addDefaultItem, deleteDefaultItem
+  getBudgetCategories, saveBudgetCategory, deleteBudgetCategory
 } from '../services/firestore';
-import { Cost, SystemSettings, DefaultItem } from '../types';
+import { Cost, SystemSettings, BudgetCategory, BudgetItemTemplate } from '../types';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Trash2, ChevronDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Trash2, ChevronDown, Plus } from 'lucide-react';
 import { formatCurrency } from '../utils/format';
 
-type SortKey = 'name' | 'unitCost' | null;
-type SortDirection = 'asc' | 'desc';
 
-const DefaultItemsSection: React.FC<{
-  items: DefaultItem[];
-  onAdd: (item: Omit<DefaultItem, 'id'>) => void;
+const BudgetCategorySection: React.FC<{
+  categories: BudgetCategory[];
+  onSave: (category: BudgetCategory) => void;
   onDelete: (id: string) => void;
-}> = ({ items, onAdd, onDelete }) => {
-  const [newItem, setNewItem] = useState({ name: '', unitCost: '' });
-  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection }>({ 
-    key: null, 
-    direction: 'asc' 
-  });
+}> = ({ categories, onSave, onDelete }) => {
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [newItemForms, setNewItemForms] = useState<Record<string, { name: string, unitCost: string }>>({});
 
-  const handleAdd = () => {
-    if (!newItem.name || !newItem.unitCost) return;
-    onAdd({
-      name: newItem.name,
-      unitCost: Number(newItem.unitCost)
+  const handleAddCategory = () => {
+    if (!newCategoryName.trim()) return;
+    onSave({
+      name: newCategoryName,
+      items: [],
     });
-    setNewItem({ name: '', unitCost: '' });
-  };
-
-  const handleSort = (key: 'name' | 'unitCost') => {
-    setSortConfig(current => {
-      if (current.key === key) {
-        // Se já está ordenado por essa coluna, inverte a direção
-        return { key, direction: current.direction === 'asc' ? 'desc' : 'asc' };
-      }
-      // Se é uma nova coluna, ordena ascendente por padrão
-      return { key, direction: 'asc' };
-    });
-  };
-
-  const sortedItems = useMemo(() => {
-    const sortableItems = [...items];
-    if (sortConfig.key !== null) {
-      sortableItems.sort((a, b) => {
-        const valA = a[sortConfig.key!];
-        const valB = b[sortConfig.key!];
-
-        if (valA < valB) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
-        }
-        if (valA > valB) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-    return sortableItems;
-  }, [items, sortConfig]);
-
-  const getSortIcon = (columnKey: 'name' | 'unitCost') => {
-    if (sortConfig.key !== columnKey) {
-      return <ArrowUpDown size={14} className="text-slate-300" />;
-    }
-    return sortConfig.direction === 'asc' ? <ArrowUp size={14} className="text-indigo-600" /> : <ArrowDown size={14} className="text-indigo-600" />;
+    setNewCategoryName('');
   };
   
+  const handleAddItem = (categoryId: string) => {
+    const form = newItemForms[categoryId];
+    if (!form || !form.name || !form.unitCost) return;
+    
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) return;
+
+    const newItem: BudgetItemTemplate = {
+      id: crypto.randomUUID(),
+      name: form.name,
+      unitCost: Number(form.unitCost),
+    };
+    
+    const updatedCategory = {
+      ...category,
+      items: [...category.items, newItem]
+    };
+    onSave(updatedCategory);
+    setNewItemForms(prev => ({ ...prev, [categoryId]: { name: '', unitCost: '' } }));
+  };
+  
+  const handleDeleteItem = (categoryId: string, itemId: string) => {
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) return;
+    
+    const updatedCategory = {
+      ...category,
+      items: category.items.filter(item => item.id !== itemId)
+    };
+    onSave(updatedCategory);
+  };
+
+  const toggleCategory = (id: string) => {
+    setExpandedCategories(prev => ({ ...prev, [id]: !prev[id] }));
+    if (!newItemForms[id]) {
+      setNewItemForms(prev => ({ ...prev, [id]: { name: '', unitCost: '' } }));
+    }
+  };
+
   return (
     <Card>
-      <CardHeader title="Itens Padrão para Orçamentos" />
+      <CardHeader title="Grupos de Itens para Orçamentos" />
       <CardContent>
         <div className="flex gap-4 mb-6 items-end flex-wrap md:flex-nowrap p-4 bg-slate-50 rounded-lg border">
-          <Input label="Nome do Item" value={newItem.name} onChange={e => setNewItem({...newItem, name: e.target.value})} className="flex-1 min-w-[200px]" />
-          <Input label="Custo Unit. (R$)" type="number" value={newItem.unitCost} onChange={e => setNewItem({...newItem, unitCost: e.target.value})} className="md:w-40" />
-          <Button onClick={handleAdd}>Adicionar Item</Button>
+          <Input label="Nome do Novo Grupo" value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} className="flex-1 min-w-[200px]" />
+          <Button onClick={handleAddCategory}><Plus size={16} className="mr-2" />Criar Grupo</Button>
         </div>
-        <div className="border rounded-md overflow-hidden">
-          <table className="min-w-full divide-y divide-slate-200">
-            <thead className="bg-slate-50">
-              <tr>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase cursor-pointer hover:bg-slate-100 transition-colors select-none"
-                  onClick={() => handleSort('name')}
-                >
-                  <div className="flex items-center gap-2">
-                    Item
-                    {getSortIcon('name')}
+        
+        <div className="space-y-2">
+          {categories.length > 0 ? categories.map(cat => (
+            <div key={cat.id} className="border rounded-md overflow-hidden">
+              <div className="w-full flex justify-between items-center px-4 py-3 bg-slate-50">
+                <button onClick={() => toggleCategory(cat.id!)} className="flex-1 flex items-center gap-2 text-left">
+                  <ChevronDown size={20} className={`transition-transform ${expandedCategories[cat.id!] ? 'rotate-180' : ''}`} />
+                  <h4 className="font-medium text-slate-800">{cat.name}</h4>
+                </button>
+                <button onClick={() => onDelete(cat.id!)} className="text-red-600 hover:text-red-900 ml-4"><Trash2 size={16} /></button>
+              </div>
+
+              {expandedCategories[cat.id!] && (
+                <div className="p-4 bg-white">
+                  <div className="flex gap-4 mb-4 items-end flex-wrap md:flex-nowrap p-3 bg-slate-50 rounded-md border">
+                    <Input label="Nome do Item" value={newItemForms[cat.id!]?.name || ''} onChange={e => setNewItemForms(p => ({ ...p, [cat.id!]: { ...p[cat.id!], name: e.target.value }}))} className="flex-1" />
+                    <Input label="Custo Unit." type="number" value={newItemForms[cat.id!]?.unitCost || ''} onChange={e => setNewItemForms(p => ({ ...p, [cat.id!]: { ...p[cat.id!], unitCost: e.target.value }}))} className="w-32" />
+                    <Button onClick={() => handleAddItem(cat.id!)} size="sm">Adicionar</Button>
                   </div>
-                </th>
-                <th 
-                  className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase cursor-pointer hover:bg-slate-100 transition-colors select-none"
-                  onClick={() => handleSort('unitCost')}
-                >
-                   <div className="flex items-center gap-2">
-                    Custo Unitário
-                    {getSortIcon('unitCost')}
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              {sortedItems.length > 0 ? sortedItems.map(item => (
-                <tr key={item.id}>
-                  <td className="px-6 py-3 text-sm text-slate-900">{item.name}</td>
-                  <td className="px-6 py-3 text-sm text-slate-900">{formatCurrency(item.unitCost)}</td>
-                  <td className="px-6 py-3 text-right w-16">
-                    <button onClick={() => onDelete(item.id!)} className="text-red-600 hover:text-red-900"><Trash2 size={16} /></button>
-                  </td>
-                </tr>
-              )) : (
-                <tr>
-                  <td colSpan={3} className="text-center py-4 text-slate-500">Nenhum item padrão cadastrado.</td>
-                </tr>
+                  
+                  {cat.items.length > 0 ? (
+                    <table className="min-w-full text-sm">
+                      <tbody className="divide-y">
+                        {cat.items.map(item => (
+                          <tr key={item.id}>
+                            <td className="py-2 px-2">{item.name}</td>
+                            <td className="py-2 px-2 w-32">{formatCurrency(item.unitCost)}</td>
+                            <td className="py-2 px-2 w-16 text-right">
+                              <button onClick={() => handleDeleteItem(cat.id!, item.id)} className="text-red-500 hover:text-red-700"><Trash2 size={14} /></button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : <p className="text-center text-xs text-slate-500 py-2">Nenhum item neste grupo.</p>}
+                </div>
               )}
-            </tbody>
-          </table>
+            </div>
+          )) : <p className="text-center py-4 text-slate-500">Nenhum grupo de itens cadastrado.</p>}
         </div>
       </CardContent>
     </Card>
@@ -217,18 +212,18 @@ const CostSection: React.FC<{
 export const Costs: React.FC = () => {
   const [allCosts, setAllCosts] = useState<Cost[]>([]);
   const [settings, setSettings] = useState<SystemSettings>({ occupancyRate: 70, workingDaysPerMonth: 22 });
-  const [defaultItems, setDefaultItems] = useState<DefaultItem[]>([]);
+  const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>([]);
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    const [costs, st, items] = await Promise.all([getCosts(), getSettings(), getDefaultItems()]);
+    const [costs, st, cats] = await Promise.all([getCosts(), getSettings(), getBudgetCategories()]);
     const sortedCosts = costs.sort((a, b) => (b.monthYear || '').localeCompare(a.monthYear || ''));
     setAllCosts(sortedCosts);
     setSettings(st);
-    setDefaultItems(items);
+    setBudgetCategories(cats);
   };
 
   const handleAddCost = async (cost: Omit<Cost, 'id'>) => {
@@ -241,13 +236,13 @@ export const Costs: React.FC = () => {
     loadData();
   };
   
-  const handleAddDefaultItem = async (item: Omit<DefaultItem, 'id'>) => {
-    await addDefaultItem(item as DefaultItem);
+  const handleSaveCategory = async (category: BudgetCategory) => {
+    await saveBudgetCategory(category);
     loadData();
   };
 
-  const handleDeleteDefaultItem = async (id: string) => {
-    await deleteDefaultItem(id);
+  const handleDeleteCategory = async (id: string) => {
+    await deleteBudgetCategory(id);
     loadData();
   };
 
@@ -271,7 +266,7 @@ export const Costs: React.FC = () => {
         </CardContent>
       </Card>
       
-      <DefaultItemsSection items={defaultItems} onAdd={handleAddDefaultItem} onDelete={handleDeleteDefaultItem} />
+      <BudgetCategorySection categories={budgetCategories} onSave={handleSaveCategory} onDelete={handleDeleteCategory} />
 
       <CostSection title="Custos Fixos" costs={fixedCosts} type="fixed" onAdd={handleAddCost} onDelete={handleDeleteCost} />
       <CostSection title="Custos Variáveis" costs={variableCosts} type="variable" onAdd={handleAddCost} onDelete={handleDeleteCost} />

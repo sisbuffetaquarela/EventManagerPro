@@ -28,10 +28,16 @@ export interface BudgetItem {
   unitCost: number; // cost defined by user per item
 }
 
-export interface DefaultItem {
-  id?: string;
+export interface BudgetItemTemplate {
+  id: string; 
   name: string;
   unitCost: number;
+}
+
+export interface BudgetCategory {
+  id?: string;
+  name: string;
+  items: BudgetItemTemplate[];
   createdAt?: number;
 }
 
