@@ -20,7 +20,7 @@ export const Guide: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
             <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg text-center">
               <div className="font-bold text-indigo-600 mb-1">1. Configuração</div>
-              <div className="text-slate-600">Defina dias úteis, taxa de ocupação e cadastre seus itens padrão.</div>
+              <div className="text-slate-600">Defina taxas, dias úteis e cadastre seus <strong>grupos de itens</strong> padrão.</div>
             </div>
             <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg text-center">
               <div className="font-bold text-indigo-600 mb-1">2. Custos Mensais</div>
@@ -28,7 +28,7 @@ export const Guide: React.FC = () => {
             </div>
             <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg text-center">
               <div className="font-bold text-indigo-600 mb-1">3. Orçamentos</div>
-              <div className="text-slate-600">Crie propostas calculando a margem de lucro exata desejada.</div>
+              <div className="text-slate-600">Carregue um grupo e crie propostas com margem de lucro exata.</div>
             </div>
             <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg text-center">
               <div className="font-bold text-indigo-600 mb-1">4. Relatórios</div>
@@ -51,7 +51,7 @@ export const Guide: React.FC = () => {
                 <strong>Parâmetros Gerais:</strong> A "Taxa de Ocupação" e "Dias Úteis" definem quantos eventos você espera fazer. O sistema usa isso para dividir seus custos fixos. Se você paga R$ 5.000 de aluguel e espera 10 eventos, cada evento "custa" R$ 500 de aluguel.
               </li>
               <li>
-                <strong>Itens Padrão:</strong> Cadastre aqui produtos e serviços que você vende sempre (ex: "Cadeira Tiffany", "Buffet Churrasco p/ pessoa"). Isso permite preencher orçamentos com um clique.
+                <strong>Grupos de Itens Padrão:</strong> Em vez de itens avulsos, agora você pode criar "Grupos" para tipos de eventos (ex: "Festa Infantil", "Casamento Completo"). Dentro de cada grupo, você adiciona os itens e serviços padrão. Isso permite montar um orçamento completo com apenas um clique.
               </li>
               <li>
                 <strong>Custos Fixos e Variáveis da Empresa:</strong> Cadastre todas as despesas da estrutura do negócio. Você pode usar a data "Recorrente" para custos que se repetem todo mês (ex: Internet).
@@ -68,7 +68,7 @@ export const Guide: React.FC = () => {
                 <strong>Dados do Evento:</strong> Preencha data e local. A data é importante para o sistema saber qual tabela de custos mensais utilizar no cálculo.
               </li>
               <li>
-                <strong>Carregar Padrão:</strong> Use este botão na lista de itens para importar os Itens Padrão cadastrados anteriormente. Depois, apenas ajuste as quantidades.
+                <strong>Carregar Grupo Padrão:</strong> Use o seletor de "Grupos" para importar uma lista completa de itens de um modelo de evento pré-cadastrado. Depois, apenas ajuste as quantidades e valores conforme a necessidade.
               </li>
               <li>
                 <strong>Resumo Financeiro:</strong> O sistema mostra o "Custo Total do Evento" (soma dos itens + rateio de custo fixo).
