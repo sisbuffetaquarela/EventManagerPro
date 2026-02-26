@@ -21,7 +21,10 @@ export const Dashboard: React.FC = () => {
     scheduled: 0,
     completed: 0,
     pending: 0,
-    currentMonthRevenue: 0
+    currentMonthRevenue: 0,
+    scheduledValue: 0,
+    completedValue: 0,
+    pendingValue: 0,
   });
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [chartData, setChartData] = useState<ChartData | null>(null);
@@ -41,18 +44,27 @@ export const Dashboard: React.FC = () => {
     
     // Stats Cards
     let scheduled = 0, completed = 0, pending = 0, revenue = 0;
+    let scheduledValue = 0, completedValue = 0, pendingValue = 0;
+
     allBudgets.forEach(b => {
-      if (b.status === BudgetStatus.SCHEDULED) scheduled++;
-      if (b.status === BudgetStatus.DRAFT) pending++;
+      if (b.status === BudgetStatus.SCHEDULED) {
+        scheduled++;
+        scheduledValue += b.totalSales;
+      }
+      if (b.status === BudgetStatus.DRAFT) {
+        pending++;
+        pendingValue += b.totalSales;
+      }
       if (b.status === BudgetStatus.COMPLETED) {
         completed++;
+        completedValue += b.totalSales;
         const eventDate = new Date(b.eventDate);
         if (eventDate.getUTCMonth() === now.getUTCMonth() && eventDate.getUTCFullYear() === now.getUTCFullYear()) {
           revenue += b.totalSales;
         }
       }
     });
-    setStats({ scheduled, completed, pending, currentMonthRevenue: revenue });
+    setStats({ scheduled, completed, pending, currentMonthRevenue: revenue, scheduledValue, completedValue, pendingValue });
 
     // Chart Data (last 6 months)
     const labels: string[] = [];
@@ -105,7 +117,7 @@ export const Dashboard: React.FC = () => {
     });
   };
 
-  const StatCard = ({ title, value, icon: Icon, colorClass }: any) => (
+  const StatCard = ({ title, value, icon: Icon, colorClass, subtitle }: any) => (
     <Card>
       <CardContent className="flex items-center gap-4">
         <div className={`p-3 rounded-full ${colorClass}`}>
@@ -114,6 +126,7 @@ export const Dashboard: React.FC = () => {
         <div>
           <p className="text-sm text-slate-500 font-medium">{title}</p>
           <h3 className="text-2xl font-bold text-slate-900">{value}</h3>
+          {subtitle && <p className="text-sm text-slate-600 font-medium">{subtitle}</p>}
         </div>
       </CardContent>
     </Card>
@@ -124,9 +137,9 @@ export const Dashboard: React.FC = () => {
       <h2 className="text-2xl font-bold text-slate-900">Dashboard</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Eventos Agendados" value={stats.scheduled} icon={CalendarCheck} colorClass="bg-blue-100 text-blue-600" />
-        <StatCard title="Eventos Realizados" value={stats.completed} icon={TrendingUp} colorClass="bg-green-100 text-green-600" />
-        <StatCard title="Orçamentos Pendentes" value={stats.pending} icon={Clock} colorClass="bg-yellow-100 text-yellow-600" />
+        <StatCard title="Eventos Agendados" value={stats.scheduled} subtitle={formatCurrency(stats.scheduledValue)} icon={CalendarCheck} colorClass="bg-blue-100 text-blue-600" />
+        <StatCard title="Eventos Realizados" value={stats.completed} subtitle={formatCurrency(stats.completedValue)} icon={TrendingUp} colorClass="bg-green-100 text-green-600" />
+        <StatCard title="Orçamentos Pendentes" value={stats.pending} subtitle={formatCurrency(stats.pendingValue)} icon={Clock} colorClass="bg-yellow-100 text-yellow-600" />
         <StatCard title="Receita (Mês Atual)" value={formatCurrency(stats.currentMonthRevenue)} icon={AlertCircle} colorClass="bg-indigo-100 text-indigo-600" />
       </div>
 

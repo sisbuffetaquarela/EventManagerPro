@@ -7,7 +7,7 @@ import { Input } from '../components/ui/Input';
 import { generateBudgetPDF } from '../utils/pdfGenerator';
 import { formatCurrency, formatDate } from '../utils/format';
 import { useNavigate } from 'react-router-dom';
-import { FileDown, Edit, Trash2 } from 'lucide-react';
+import { FileDown, Edit, Trash2, Copy } from 'lucide-react';
 
 export const BudgetList: React.FC = () => {
   const [budgets, setBudgets] = useState<Budget[]>([]);
@@ -53,6 +53,10 @@ export const BudgetList: React.FC = () => {
       await deleteBudget(id);
       loadBudgets();
     }
+  };
+
+  const handleDuplicate = (id: string) => {
+    navigate(`/budgets/duplicate/${id}`);
   };
 
   const getStatusColor = (status: string) => {
@@ -121,6 +125,13 @@ export const BudgetList: React.FC = () => {
                       {formatCurrency(budget.totalSales)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex justify-end gap-2">
+                      <button 
+                        onClick={() => handleDuplicate(budget.id!)}
+                        className="text-blue-600 hover:text-blue-900" 
+                        title="Duplicar"
+                      >
+                        <Copy size={18} />
+                      </button>
                       <button 
                         onClick={() => navigate(`/budgets/edit/${budget.id}`)}
                         className="text-indigo-600 hover:text-indigo-900" 

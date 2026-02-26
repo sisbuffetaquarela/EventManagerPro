@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { 
   getSettings, getCosts, saveBudget, getBudgetById, getBudgetCategories 
 } from '../services/firestore';
@@ -21,6 +21,9 @@ const formatPhone = (value: string) => {
 export const BudgetForm: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const isDuplicating = pathname.includes('/budgets/duplicate/');
+  
   const [loading, setLoading] = useState(true);
 
   const [clientName, setClientName] = useState('');
@@ -58,21 +61,33 @@ export const BudgetForm: React.FC = () => {
       if (id) {
         const existing = await getBudgetById(id);
         if (existing) {
-          setClientName(existing.clientName);
-          setClientPhone(existing.clientPhone);
-          setEventName(existing.eventName);
-          setEventLocation(existing.eventLocation);
-          setEventDate(existing.eventDate);
-          setGuestCount(String(existing.guestCount || ''));
-          setStatus(existing.status);
-          setItems(existing.items);
-          setDesiredMargin(String(existing.marginPercent || '20'));
+          if (isDuplicating) {
+            setClientName(existing.clientName);
+            setClientPhone(existing.clientPhone);
+            setEventName(`[CÓPIA] ${existing.eventName}`);
+            setEventLocation(existing.eventLocation);
+            setEventDate(existing.eventDate);
+            setGuestCount(String(existing.guestCount || ''));
+            setStatus(BudgetStatus.DRAFT); // Reset status for duplicate
+            setItems(existing.items.map(i => ({...i, id: crypto.randomUUID()}))); // Reset item ids
+            setDesiredMargin(String(existing.marginPercent || '20'));
+          } else {
+            setClientName(existing.clientName);
+            setClientPhone(existing.clientPhone);
+            setEventName(existing.eventName);
+            setEventLocation(existing.eventLocation);
+            setEventDate(existing.eventDate);
+            setGuestCount(String(existing.guestCount || ''));
+            setStatus(existing.status);
+            setItems(existing.items);
+            setDesiredMargin(String(existing.marginPercent || '20'));
+          }
         }
       }
       setLoading(false);
     };
     init();
-  }, [id]);
+  }, [id, isDuplicating]);
 
   useEffect(() => {
     const eventYearMonth = eventDate.substring(0, 7);
@@ -134,7 +149,8 @@ export const BudgetForm: React.FC = () => {
       return;
     }
     const budget: Budget = {
-      id, clientName, eventName, eventDate, status, items,
+      id: isDuplicating ? undefined : id, 
+      clientName, eventName, eventDate, status, items,
       clientPhone: clientPhone.replace(/\D/g, ''),
       eventLocation,
       guestCount: Number(guestCount) || 0,
@@ -150,11 +166,16 @@ export const BudgetForm: React.FC = () => {
   };
 
   if (loading) return <div className="text-center p-10">Carregando...</div>;
+  
+  const getTitle = () => {
+    if (isDuplicating) return 'Duplicar Orçamento';
+    return id ? 'Editar Orçamento' : 'Novo Orçamento';
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">{id ? 'Editar' : 'Novo'} Orçamento</h2>
+        <h2 className="text-2xl font-bold">{getTitle()}</h2>
         <div><Button variant="secondary" onClick={() => navigate('/budgets')}>Cancelar</Button><Button onClick={handleSave} className="ml-2">Salvar</Button></div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

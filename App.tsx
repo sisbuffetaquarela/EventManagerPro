@@ -34,6 +34,7 @@ const App: React.FC = () => {
             <Route path="budgets" element={<BudgetList />} />
             <Route path="budgets/new" element={<BudgetForm />} />
             <Route path="budgets/edit/:id" element={<BudgetForm />} />
+            <Route path="budgets/duplicate/:id" element={<BudgetForm />} />
             <Route path="reports" element={<Reports />} />
             <Route path="guide" element={<Guide />} />
           </Route>
